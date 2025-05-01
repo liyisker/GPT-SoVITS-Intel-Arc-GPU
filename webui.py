@@ -18,6 +18,7 @@ import signal
 
 import psutil
 import torch
+import intel_extension_for_pytorch as ipex
 import yaml
 
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
@@ -47,6 +48,7 @@ if site_packages_roots == []:
     site_packages_roots = ["%s/runtime/Lib/site-packages" % now_dir]
 # os.environ["OPENBLAS_NUM_THREADS"] = "4"
 os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
+os.environ["TORCH_XPU_BACKEND"] = "ipex"
 os.environ["all_proxy"] = ""
 for site_packages_root in site_packages_roots:
     if os.path.exists(site_packages_root):
@@ -96,7 +98,7 @@ import gradio as gr
 
 n_cpu = cpu_count()
 
-ngpu = torch.cuda.device_count()
+ngpu = torch.xpu.device_count()
 gpu_infos = []
 mem = []
 if_gpu_ok = False
@@ -131,15 +133,13 @@ ok_gpu_keywords = {
     "509",
 }
 set_gpu_numbers = set()
-if torch.cuda.is_available() or ngpu != 0:
+if torch.xpu.is_available() or ngpu != 0:
     for i in range(ngpu):
-        gpu_name = torch.cuda.get_device_name(i)
-        if any(value in gpu_name.upper() for value in ok_gpu_keywords):
-            # A10#A100#V100#A40#P40#M40#K80#A4500
-            if_gpu_ok = True  # 至少有一张能用的N卡
-            gpu_infos.append("%s\t%s" % (i, gpu_name))
-            set_gpu_numbers.add(i)
-            mem.append(int(torch.cuda.get_device_properties(i).total_memory / 1024 / 1024 / 1024 + 0.4))
+        gpu_name = torch.xpu.get_device_name(i)
+        if_gpu_ok = True  # 直接标记为有可用显卡
+        gpu_infos.append("%s\t%s" % (i, gpu_name))
+        set_gpu_numbers.add(i)
+        mem.append(int(torch.xpu.get_device_properties(i).total_memory / 1024 / 1024 / 1024 + 0.4))
 # # 判断是否支持mps加速
 # if torch.backends.mps.is_available():
 #     if_gpu_ok = True
@@ -446,7 +446,7 @@ def change_tts_inference(bert_path, cnhubert_base_path, gpu_number, gpt_path, so
         os.environ["sovits_path"] = sovits_path if "/" in sovits_path else "%s/%s" % (SoVITS_weight_root, sovits_path)
         os.environ["cnhubert_base_path"] = cnhubert_base_path
         os.environ["bert_path"] = bert_path
-        os.environ["_CUDA_VISIBLE_DEVICES"] = fix_gpu_number(gpu_number)
+        os.environ["_XPU_VISIBLE_DEVICES"] = fix_gpu_number(gpu_number)
         os.environ["is_half"] = str(is_half)
         os.environ["infer_ttswebui"] = str(webui_port_infer_tts)
         os.environ["is_share"] = str(is_share)
@@ -716,7 +716,7 @@ def open1Bb(
         data["output_dir"] = "%s/logs_s1_%s" % (s1_dir, version)
         # data["version"]=version
 
-        os.environ["_CUDA_VISIBLE_DEVICES"] = fix_gpu_numbers(gpu_numbers.replace("-", ","))
+        os.environ["_XPU_VISIBLE_DEVICES"] = fix_gpu_numbers(gpu_numbers.replace("-", ","))
         os.environ["hz"] = "25hz"
         tmp_config_path = "%s/tmp_s1.yaml" % tmp
         with open(tmp_config_path, "w") as f:
@@ -882,7 +882,7 @@ def open1a(inp_text, inp_wav_dir, exp_name, gpu_numbers, bert_pretrained_dir):
                 {
                     "i_part": str(i_part),
                     "all_parts": str(all_parts),
-                    "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                    "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                     "is_half": str(is_half),
                 }
             )
@@ -970,7 +970,7 @@ def open1b(inp_text, inp_wav_dir, exp_name, gpu_numbers, ssl_pretrained_dir):
                 {
                     "i_part": str(i_part),
                     "all_parts": str(all_parts),
-                    "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                    "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                 }
             )
             os.environ.update(config)
@@ -1041,7 +1041,7 @@ def open1c(inp_text, exp_name, gpu_numbers, pretrained_s2G_path):
                 {
                     "i_part": str(i_part),
                     "all_parts": str(all_parts),
-                    "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                    "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                 }
             )
             os.environ.update(config)
@@ -1139,7 +1139,7 @@ def open1abc(
                         {
                             "i_part": str(i_part),
                             "all_parts": str(all_parts),
-                            "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                            "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                         }
                     )
                     os.environ.update(config)
@@ -1185,7 +1185,7 @@ def open1abc(
                     {
                         "i_part": str(i_part),
                         "all_parts": str(all_parts),
-                        "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                        "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                     }
                 )
                 os.environ.update(config)
@@ -1225,7 +1225,7 @@ def open1abc(
                         {
                             "i_part": str(i_part),
                             "all_parts": str(all_parts),
-                            "_CUDA_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
+                            "_XPU_VISIBLE_DEVICES": fix_gpu_number(gpu_names[i_part]),
                         }
                     )
                     os.environ.update(config)
