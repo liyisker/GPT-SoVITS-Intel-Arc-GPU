@@ -29,6 +29,7 @@ import re
 import sys
 
 import torch
+os.environ["TORCH_XPU_BACKEND"] = "ipex"
 from text.LangSegmenter import LangSegmenter
 
 try:
@@ -91,9 +92,9 @@ infer_ttswebui = os.environ.get("infer_ttswebui", 9872)
 infer_ttswebui = int(infer_ttswebui)
 is_share = os.environ.get("is_share", "False")
 is_share = eval(is_share)
-if "_CUDA_VISIBLE_DEVICES" in os.environ:
-    os.environ["CUDA_VISIBLE_DEVICES"] = os.environ["_CUDA_VISIBLE_DEVICES"]
-is_half = eval(os.environ.get("is_half", "True")) and torch.cuda.is_available()
+if "_XPU_VISIBLE_DEVICES" in os.environ:
+    os.environ["XPU_VISIBLE_DEVICES"] = os.environ["_XPU_VISIBLE_DEVICES"]
+is_half = eval(os.environ.get("is_half", "True")) and torch.xpu.is_available()
 # is_half=False
 punctuation = set(["!", "?", "…", ",", ".", "-", " "])
 import gradio as gr
@@ -117,7 +118,7 @@ def set_seed(seed):
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+    torch.xpu.manual_seed(seed)
 
 
 # set_seed(42)
@@ -137,8 +138,8 @@ i18n = I18nAuto(language=language)
 
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # 确保直接启动推理UI时也能够设置。
 
-if torch.cuda.is_available():
-    device = "cuda"
+if torch.xpu.is_available():
+    device = "xpu"
 else:
     device = "cpu"
 
@@ -413,7 +414,7 @@ def init_bigvgan():
     if hifigan_model:
         hifigan_model=hifigan_model.cpu()
         hifigan_model=None
-        try:torch.cuda.empty_cache()
+        try:torch.xpu.empty_cache()
         except:pass
     if is_half == True:
         bigvgan_model = bigvgan_model.half().to(device)
@@ -439,7 +440,7 @@ def init_hifigan():
     if bigvgan_model:
         bigvgan_model=bigvgan_model.cpu()
         bigvgan_model=None
-        try:torch.cuda.empty_cache()
+        try:torch.xpu.empty_cache()
         except:pass
     if is_half == True:
         hifigan_model = hifigan_model.half().to(device)

@@ -26,7 +26,7 @@ logging.getLogger("asyncio").setLevel(logging.ERROR)
 logging.getLogger("charset_normalizer").setLevel(logging.ERROR)
 logging.getLogger("torchaudio._extension").setLevel(logging.ERROR)
 import torch
-
+import intel_extension_for_pytorch as ipex
 try:
     import gradio.analytics as analytics
 
@@ -39,10 +39,10 @@ infer_ttswebui = os.environ.get("infer_ttswebui", 9872)
 infer_ttswebui = int(infer_ttswebui)
 is_share = os.environ.get("is_share", "False")
 is_share = eval(is_share)
-if "_CUDA_VISIBLE_DEVICES" in os.environ:
-    os.environ["CUDA_VISIBLE_DEVICES"] = os.environ["_CUDA_VISIBLE_DEVICES"]
+if "_XPU_VISIBLE_DEVICES" in os.environ:
+    os.environ["XPU_VISIBLE_DEVICES"] = os.environ["_XPU_VISIBLE_DEVICES"]
 
-is_half = eval(os.environ.get("is_half", "True")) and torch.cuda.is_available()
+is_half = eval(os.environ.get("is_half", "True")) and torch.xpu.is_available()
 gpt_path = os.environ.get("gpt_path", None)
 sovits_path = os.environ.get("sovits_path", None)
 cnhubert_base_path = os.environ.get("cnhubert_base_path", None)
@@ -62,8 +62,8 @@ i18n = I18nAuto(language=language)
 
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # 确保直接启动推理UI时也能够设置。
 
-if torch.cuda.is_available():
-    device = "cuda"
+if torch.xpu.is_available():
+    device = "xpu"
 # elif torch.backends.mps.is_available():
 #     device = "mps"
 else:
